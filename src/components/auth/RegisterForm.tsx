@@ -33,7 +33,15 @@ export const RegisterForm: React.FC = () => {
       const adminsRef = collection(db, 'admins');
       const q = query(adminsRef, where('email', '==', email.toLowerCase()));
       const querySnapshot = await getDocs(q);
-      return !querySnapshot.empty;
+      
+      if (querySnapshot.empty) {
+        return false;
+      }
+      
+      // Check if the admin is active
+      const adminDoc = querySnapshot.docs[0];
+      const adminData = adminDoc.data();
+      return adminData.isActive === true;
     } catch (error) {
       console.error('Error checking admin email:', error);
       return false;

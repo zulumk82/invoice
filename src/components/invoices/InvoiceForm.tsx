@@ -10,6 +10,7 @@ import { Select } from '../ui/Select';
 import { Textarea } from '../ui/Textarea';
 import { Invoice, InvoiceItem, Client } from '../../types';
 import { generateInvoiceNumber, createReceiptFromInvoice } from '../../lib/utils';
+import { validateInvoiceCalculations, validateBusinessRules } from '../../lib/utils';
 
 interface InvoiceFormProps {
   isOpen: boolean;
@@ -123,10 +124,40 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ isOpen, onClose, invoi
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userProfile?.companyId) return;
+    
+    // Validate form data
+    if (!formData.title.trim()) {
+      addToast({
+        type: 'error',
+        title: 'Validation Error',
+        message: 'Invoice title is required.'
+      });
+      return;
+    }
+    
+    if (!formData.clientId) {
+      addToast({
+        type: 'error',
+        title: 'Validation Error',
+        message: 'Please select a client.'
+      });
+      return;
+    }
+    
+    if (items.length === 0 || items.every(item => !item.description.trim())) {
+      addToast({
+        type: 'error',
+        title: 'Validation Error',
+        message: 'Please add at least one item with a description.'
+      });
+      return;
+    }
+    
     setIsLoading(true);
     try {
       const subtotal = calculateSubtotal();
       const total = calculateTotal();
+      
       const invoiceData = {
         companyId: userProfile.companyId,
         invoiceNumber: invoice?.invoiceNumber || generateInvoiceNumber(),
@@ -143,6 +174,31 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ isOpen, onClose, invoi
         createdBy: userProfile.uid, // Track which seller created this invoice
         updatedAt: new Date()
       };
+      
+      // Validate calculations
+      const calculationValidation = validateInvoiceCalculations(invoiceData);
+      if (!calculationValidation.isValid) {
+        addToast({
+          type: 'error',
+          title: 'Calculation Error',
+          message: calculationValidation.errors.join(', ')
+        });
+        setIsLoading(false);
+        return;
+      }
+      
+      // Validate business rules
+      const businessValidation = validateBusinessRules(invoiceData, 'invoice');
+      if (!businessValidation.isValid) {
+        addToast({
+          type: 'error',
+          title: 'Validation Error',
+          message: businessValidation.errors.join(', ')
+        });
+        setIsLoading(false);
+        return;
+      }
+      
       if (invoice) {
         const wasPaid = invoice.status === 'paid';
         const isNowPaid = formData.status === 'paid';

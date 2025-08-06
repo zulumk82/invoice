@@ -8,6 +8,10 @@ interface Toast {
   title: string;
   message?: string;
   duration?: number;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
 }
 
 interface ToastContextType {
@@ -93,6 +97,14 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                     <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
                       {toast.message}
                     </p>
+                  )}
+                  {toast.action && (
+                    <button
+                      onClick={toast.action.onClick}
+                      className="mt-2 text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                    >
+                      {toast.action.label}
+                    </button>
                   )}
                 </div>
                 <button

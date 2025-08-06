@@ -52,10 +52,15 @@ export const Header: React.FC<HeaderProps> = ({ onMobileMenuClick }) => {
         if (outcome === 'accepted') {
           setShowInstall(false);
           setIsInstalled(true);
+          // Show success message
+          setTimeout(() => {
+            alert('App installed successfully! You can now access it from your home screen.');
+          }, 1000);
         }
         setDeferredPrompt(null);
       } catch (error) {
         console.error('Error during install:', error);
+        alert('Installation failed. Please try again or check your browser settings.');
       }
     }
   };

@@ -375,8 +375,18 @@ class DatabaseService {
     if (!this.isOnline || this.syncInProgress || !this.db) return;
 
     this.syncInProgress = true;
+    let successCount = 0;
+    let errorCount = 0;
+    
     try {
       const queue = await this.getSyncQueue();
+      
+      if (queue.length === 0) {
+        console.log('No pending changes to sync');
+        return;
+      }
+      
+      console.log(`Syncing ${queue.length} pending changes...`);
       
       for (const item of queue) {
         try {
@@ -385,25 +395,31 @@ class DatabaseService {
               if (item.data) {
                 const { id, ...data } = item.data;
                 await addDoc(collection(db, item.collection), data);
+                successCount++;
               }
               break;
             case 'update':
               if (item.data) {
                 const { id, ...data } = item.data;
                 await updateDoc(doc(db, item.collection, id), data);
+                successCount++;
               }
               break;
             case 'delete':
               if (item.data?.id) {
                 await deleteDoc(doc(db, item.collection, item.data.id));
+                successCount++;
               }
               break;
           }
           await this.removeFromSyncQueue(item.id);
         } catch (error) {
           console.error(`Error syncing item ${item.id}:`, error);
+          errorCount++;
         }
       }
+      
+      console.log(`Sync completed: ${successCount} successful, ${errorCount} failed`);
     } finally {
       this.syncInProgress = false;
     }

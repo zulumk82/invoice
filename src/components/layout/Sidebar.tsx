@@ -84,10 +84,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onClose }) => {
   return (
     <>
       {/* Overlay for mobile */}
-      <div
-        className={`fixed inset-0 z-40 bg-black bg-opacity-40 transition-opacity md:hidden ${isMobileOpen ? 'block' : 'hidden'}`}
-        onClick={onClose}
-      />
+      {isMobileOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-40 bg-black bg-opacity-50 backdrop-blur-sm md:hidden"
+          onClick={onClose}
+        />
+      )}
       <motion.div
         initial={false}
         animate={{
@@ -95,7 +100,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onClose }) => {
           width: isCollapsed && window.innerWidth >= 768 ? 64 : 256
         }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        className={`fixed z-50 md:static top-0 left-0 h-full bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col shadow-lg transition-all duration-300
+        className={`fixed z-50 md:static top-0 left-0 h-full bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col shadow-xl transition-all duration-300
           ${isMobileOpen ? 'block' : 'hidden'} md:block`}
         style={{ maxWidth: 256 }}
       >

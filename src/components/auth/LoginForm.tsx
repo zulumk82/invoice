@@ -24,7 +24,22 @@ export const LoginForm: React.FC = () => {
       await signIn(email, password);
       navigate('/dashboard');
     } catch (error) {
-      setError('Invalid email or password');
+      console.error('Login error:', error);
+      if (error instanceof Error) {
+        if (error.message.includes('user-not-found')) {
+          setError('No account found with this email address.');
+        } else if (error.message.includes('wrong-password')) {
+          setError('Incorrect password. Please try again.');
+        } else if (error.message.includes('too-many-requests')) {
+          setError('Too many failed attempts. Please try again later.');
+        } else if (error.message.includes('user-disabled')) {
+          setError('This account has been disabled. Contact your administrator.');
+        } else {
+          setError('Login failed. Please check your credentials and try again.');
+        }
+      } else {
+        setError('An unexpected error occurred. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }

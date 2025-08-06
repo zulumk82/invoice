@@ -10,6 +10,7 @@ import { Select } from '../ui/Select';
 import { Textarea } from '../ui/Textarea';
 import { Receipt, Invoice } from '../../types';
 import { convertFirestoreTimestampToDate, formatCurrency } from '../../lib/utils';
+import { validateReceiptAmount, validateBusinessRules } from '../../lib/utils';
 
 interface ReceiptFormProps {
   isOpen: boolean;
@@ -131,6 +132,18 @@ export const ReceiptForm: React.FC<ReceiptFormProps> = ({ isOpen, onClose, recei
     }
     setIsLoading(true);
     try {
+      // Find the selected invoice for validation
+      const selectedInvoice = invoices.find(inv => inv.id === formData.invoiceId);
+      if (!selectedInvoice) {
+        addToast({
+          type: 'error',
+          title: 'Error',
+          message: 'Selected invoice not found.'
+        });
+        setIsLoading(false);
+        return;
+      }
+      
       const receiptData = {
         companyId: userProfile.companyId,
         invoiceId: formData.invoiceId,
@@ -140,6 +153,31 @@ export const ReceiptForm: React.FC<ReceiptFormProps> = ({ isOpen, onClose, recei
         notes: formData.notes,
         updatedAt: new Date()
       };
+      
+      // Validate receipt amount against invoice
+      const amountValidation = validateReceiptAmount(receiptData, selectedInvoice);
+      if (!amountValidation.isValid) {
+        addToast({
+          type: 'error',
+          title: 'Validation Error',
+          message: amountValidation.errors.join(', ')
+        });
+        setIsLoading(false);
+        return;
+      }
+      
+      // Validate business rules
+      const businessValidation = validateBusinessRules(receiptData, 'receipt');
+      if (!businessValidation.isValid) {
+        addToast({
+          type: 'error',
+          title: 'Validation Error',
+          message: businessValidation.errors.join(', ')
+        });
+        setIsLoading(false);
+        return;
+      }
+      
       if (receipt) {
         await receiptService.updateReceipt(receipt.id, receiptData, userProfile?.uid || '');
         addToast({
